@@ -1,0 +1,157 @@
+---
+title: "p8105_hw5_mss2284"
+author: "Maya Spaur"
+date: "11/6/2019"
+output: github_document
+---
+
+```{r setup}
+library(tidyverse)
+library(ggplot2)
+library(ggridges)
+
+```
+
+
+#Problem 1
+
+```{r}
+set.seed(10)
+
+iris_with_missing = iris %>% 
+  map_df(~replace(.x, sample(1:150, 20), NA)) %>%
+  mutate(Species = as.character(Species))
+
+head(iris_with_missing, 10)
+tail(iris_with_missing, 10)
+
+clean_iris = function(x) {
+   if (is.numeric(x)) {
+   replace_na(x, mean(x, na.rm = TRUE))
+   }
+   else if (is.character(x))
+     {replace_na(x, "virginica")}
+}
+
+output = map_dfr(.x = iris_with_missing, ~ clean_iris(.x))
+
+head(output, 10)
+tail(output, 10)
+```
+
+As demonstrated by the first 10 rows, the missing numeric variables have been replaced with the mean of the non-missing values. As shownin the last 10 rows, the missing character values have been replaced with "virginica."
+
+#Problem 2
+
+
+```{r}
+
+file_names_data = tibble(
+  subject = list.files(path = "./data/")
+  ) %>%
+  mutate(
+    file_path = str_c("./data/", subject),
+    subject_data = purrr::map(read_csv(file = file_path), file_path)
+    )
+
+subject_data_2 = cbind(file_names_data, subject_data) %>%
+  mutate(subject = str_replace(subject, ".csv", "")) %>%
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week",
+    names_prefix = "week_",
+    values_to = "observations"
+    )
+
+```
+
+Plot 
+
+
+```{r}
+spaghetti_plot = 
+  subject_data_2 %>%
+  mutate(week = as.numeric(week)) %>%
+  ggplot(aes(x = week, y = observations, color = subject)) + geom_line() + theme(legend.position="bottom")
+
+spaghetti_plot
+  
+```
+
+#Problem 3 
+
+
+```{r}
+sim_regression = function(n = 30, beta0 = 2, beta1 = 0) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = 1, sd = 1),
+    y = beta0 + beta1 * x + rnorm(n, 0, 50)
+  )
+  
+  ls_fit = lm(y ~ x, data = sim_data) %>%
+     broom::tidy() %>%
+     select(term, estimate, p.value)
+  
+}
+
+
+sim_results = 
+  tibble(beta1 = 0:6) %>% 
+  mutate(
+    output_lists = map(.x = beta1, ~rerun(10000, sim_regression(beta1 = .x))),
+    estimate_dfs = map(output_lists, bind_rows)) %>% 
+  select(-output_lists) %>% 
+  unnest(estimate_dfs)
+  
+ sim_results
+```
+
+#Plots
+
+#is this correct?
+
+Plot 1 
+
+```{r}
+Fig_1 =
+sim_results %>%
+  group_by(beta1) %>%
+  summarize(n = n(),
+            prop_sig = sum(p.value < .05)/n()*100) %>%
+  ggplot(aes(x = beta1, y = prop_sig)) + geom_point() + geom_smooth(se = FALSE) + labs(x = "Value of Beta1", y = "Proportion Null Rejected")
+
+Fig_1
+```
+
+This shows that the association between effect size (Beta1) is overall positively associated with power (proportion of times the null was rejected).The relationship is not linear.
+
+Plot 2
+
+```{r}
+Fig_2 = 
+  sim_results %>%
+  mutate(average_estimate = mean(estimate)) %>%
+  ggplot(aes(x = beta1, y = average_estimate)) + geom_point() + geom_line() + labs(x = "Beta1", y = "Mean Estimate Beta1")
+
+Fig_2
+```
+
+
+Plot 3
+
+```{r}
+Fig_3 = 
+  sim_results %>%
+  filter(p.value < .05) %>%
+  mutate(average_estimate = mean(estimate)) %>%
+  ggplot(aes(x = beta1, y = average_estimate)) + geom_point() + geom_line() + labs(x = "Beta1", y = "Mean Estimate Beta1")
+  
+Fig_3
+
+```
+
+Overlay of plots 2 and 3
+
+#how to do this?
+

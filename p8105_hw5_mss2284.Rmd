@@ -9,6 +9,7 @@ output: github_document
 library(tidyverse)
 library(ggplot2)
 library(ggridges)
+library(patchwork)
 
 ```
 
@@ -43,40 +44,43 @@ As demonstrated by the first 10 rows, the missing numeric variables have been re
 
 #Problem 2
 
-
+#less concise version
 ```{r}
+names_df =
+  tibble(
+  subject = list.files(path="./data")
+)
 
-file_names_data = tibble(
-  subject = list.files(path = "./data/")
-  ) %>%
-  mutate(
-    file_path = str_c("./data/", subject),
-    subject_data = purrr::map(read_csv(file = file_path), file_path)
-    )
+file_path = "./data/"
+file_names = file_path %>%
+  list.files()
 
-subject_data_2 = cbind(file_names_data, subject_data) %>%
-  mutate(subject = str_replace(subject, ".csv", "")) %>%
-  pivot_longer(
+observations_df =
+  file_names %>%
+  map_dfr(function(file_name){
+ 
+  read_csv(paste0(file_path, file_name))
+})
+
+study_data = cbind(names_df, observations_df) %>%
+ mutate(subject = str_replace(subject, ".csv", "")) %>%
+ pivot_longer(
     week_1:week_8,
     names_to = "week",
     names_prefix = "week_",
-    values_to = "observations"
-    )
+    values_to = "observations")
+
+study_data %>%
+  ggplot(aes(x = as.numeric(week), y = observations, color = subject)) +
+  geom_line() +
+  labs(title = "Weekly observations by subject", x = "Week", y = "Observations") + theme(legend.position="bottom")
 
 ```
 
-Plot 
+Overall differences between the groups include that subjects in the experimental arm tended to have higher values of weekly observations than subjects in the control arm. Observations for subjects in the experimental arm tended to increase as the weeks progressed, whereas there was greater variation in increasing and decreasing tends for subjects in the control arm.
 
 
-```{r}
-spaghetti_plot = 
-  subject_data_2 %>%
-  mutate(week = as.numeric(week)) %>%
-  ggplot(aes(x = week, y = observations, color = subject)) + geom_line() + theme(legend.position="bottom")
 
-spaghetti_plot
-  
-```
 
 #Problem 3 
 
@@ -99,17 +103,15 @@ sim_regression = function(n = 30, beta0 = 2, beta1 = 0) {
 sim_results = 
   tibble(beta1 = 0:6) %>% 
   mutate(
-    output_lists = map(.x = beta1, ~rerun(10000, sim_regression(beta1 = .x))),
-    estimate_dfs = map(output_lists, bind_rows)) %>% 
+    output_lists = purrr::map(.x = beta1, ~rerun(10000, sim_regression(beta1 = .x))),
+    estimate_dfs = purrr::map(output_lists, bind_rows)) %>% 
   select(-output_lists) %>% 
   unnest(estimate_dfs)
   
- sim_results
 ```
 
 #Plots
 
-#is this correct?
 
 Plot 1 
 
@@ -150,8 +152,4 @@ Fig_3 =
 Fig_3
 
 ```
-
-Overlay of plots 2 and 3
-
-#how to do this?
 

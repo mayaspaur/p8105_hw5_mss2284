@@ -17,6 +17,8 @@ library(patchwork)
 
 #Problem 1
 
+Iris dataset with example subset
+
 ```{r}
 set.seed(10)
 
@@ -27,6 +29,11 @@ iris_with_missing = iris %>%
 head(iris_with_missing, 10)
 tail(iris_with_missing, 10)
 
+```
+
+Replacing missing values with example subset
+
+```{r}
 clean_iris = function(x) {
    if (is.numeric(x)) {
    replace_na(x, mean(x, na.rm = TRUE))
@@ -41,9 +48,11 @@ head(output, 10)
 tail(output, 10)
 ```
 
-As demonstrated by the first 10 rows, the missing numeric variables have been replaced with the mean of the non-missing values. As shownin the last 10 rows, the missing character values have been replaced with "virginica."
+As demonstrated by the first 10 rows displayed, the missing numeric variables have been replaced with the mean of the non-missing values. As shown in the last 10 rows, the missing character values have been replaced with "virginica."
 
 #Problem 2
+
+Creating a dataframe, iterating over file names and reading in data for each subject, tidying: 
 
 
 ```{r, message = FALSE}
@@ -72,6 +81,7 @@ study_data = cbind(names_data, subject_data) %>%
     values_to = "observations")
 ```
 
+Spaghetti plot
 
 ```{r spaghetti plot}
 spaghetti_plot = 
@@ -159,7 +169,7 @@ Fig_3
 
 ```
 
-The sample average of Beta1 across tests for which the null is rejected is not approximately equal to the true value of Beta1, as seen by the difference in y axes. As demonstrated in the tables below, the null was rejected a different proportion of time for each beta, with greater proportions for beta = 5 and 6. This may have led to a difference in the sample average.
+The sample average of Beta1 across tests for which the null is rejected is not approximately equal to the true value of Beta1, as seen by the difference in y axes. As demonstrated in the tables below, the null was rejected with higher proportions for beta = 5 and 6. This may have led to a difference in the sample average.
 
 ```{r}
 table_1 = 

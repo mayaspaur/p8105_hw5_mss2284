@@ -5,6 +5,7 @@ date: "11/6/2019"
 output: github_document
 ---
 
+
 ```{r setup}
 library(tidyverse)
 library(ggplot2)
@@ -44,9 +45,9 @@ As demonstrated by the first 10 rows, the missing numeric variables have been re
 
 #Problem 2
 
-#less concise version
+
 ```{r}
-names_df =
+names_data =
   tibble(
   subject = list.files(path="./data")
 )
@@ -55,30 +56,33 @@ file_path = "./data/"
 file_names = file_path %>%
   list.files()
 
-observations_df =
+observations_data =
   file_names %>%
   map_dfr(function(file_name){
  
   read_csv(paste0(file_path, file_name))
 })
 
-study_data = cbind(names_df, observations_df) %>%
+study_data = cbind(names_data, observations_data) %>%
  mutate(subject = str_replace(subject, ".csv", "")) %>%
  pivot_longer(
     week_1:week_8,
     names_to = "week",
     names_prefix = "week_",
     values_to = "observations")
+```
 
-study_data %>%
+```{r spaghetti plot}
+spaghetti_plot = 
+  study_data %>%
   ggplot(aes(x = as.numeric(week), y = observations, color = subject)) +
   geom_line() +
   labs(title = "Weekly observations by subject", x = "Week", y = "Observations") + theme(legend.position="bottom")
 
+spaghetti_plot 
 ```
 
 Overall differences between the groups include that subjects in the experimental arm tended to have higher values of weekly observations than subjects in the control arm. Observations for subjects in the experimental arm tended to increase as the weeks progressed, whereas there was greater variation in increasing and decreasing tends for subjects in the control arm.
-
 
 
 
@@ -150,6 +154,22 @@ Fig_3 =
   ggplot(aes(x = beta1, y = average_estimate)) + geom_point() + geom_line() + labs(x = "Beta1", y = "Mean Estimate Beta1")
   
 Fig_3
+
+
+Fig_2 + Fig_3
+```
+
+The sample average of Beta1 across tests for which the null is rejected is not approximately equal to the true value of Beta1. As demonstrated in the table below, the null was rejected a proportion of time for each beta, leading to a difference in the sample average.
+
+```{r}
+table = 
+  sim_results %>%
+  group_by(beta1) %>%
+  summarize(n = n(),
+            prop_sig = sum(p.value < .05)/n()*100) %>%
+  knitr::kable()
+
+table
 
 ```
 
